@@ -1,5 +1,3 @@
-## <!-- eslint-disable -->
-
 ---
 
 name: virtuals-protocol-acp
