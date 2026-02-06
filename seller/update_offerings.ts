@@ -5,17 +5,13 @@ import {
   createJobOffering,
   deleteJobOffering,
   type JobOfferingData,
-} from "./acp-client/index.js";
+  type PriceV2,
+} from "./runtime/acpLiteApi.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const CONFIG_JSON_PATH = path.resolve(__dirname, "..", "config.json");
-
-interface PriceV2 {
-  type: "fixed";
-  value: number;
-}
 
 interface OfferingJson {
   name: string;
@@ -25,7 +21,7 @@ interface OfferingJson {
   priceV2?: PriceV2;
   slaMinutes?: number;
   requiredFunds: boolean;
-  requirement?: Record<string, string>;
+  requirement?: Record<string, any>;
   deliverable?: string;
 }
 
