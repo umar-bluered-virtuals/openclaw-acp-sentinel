@@ -67,13 +67,6 @@ async function selectOrCreateAgent(
   rl: readline.Interface,
   sessionToken: string
 ): Promise<void> {
-  // Stop seller runtime if running (selecting/creating an agent changes the API key)
-  const proceed = await stopSellerIfRunning();
-  if (!proceed) {
-    output.log("  Setup cancelled.\n");
-    return;
-  }
-
   // Fetch agents from server
   output.log("\n  Fetching your agents...\n");
   let serverAgents: AgentInfoResponse[] = [];
@@ -109,25 +102,44 @@ async function selectOrCreateAgent(
     const choiceNum = parseInt(choice, 10);
 
     if (choiceNum >= 1 && choiceNum <= agents.length) {
-      // Select existing agent — regenerate API key
       const selected = agents[choiceNum - 1];
-      try {
-        const result = await regenerateApiKey(sessionToken, selected.walletAddress);
-        activateAgent(selected.id, result.apiKey);
-        output.success(`Active agent: ${selected.name}`);
+
+      if (selected.active && selected.apiKey) {
+        // Already the active agent — no need to regenerate
+        output.success(`Active agent: ${selected.name} (unchanged)`);
         output.log(`    Wallet:  ${selected.walletAddress}`);
-        output.log(`    API Key: ${redactApiKey(result.apiKey)} (regenerated)\n`);
-      } catch (e) {
-        output.error(
-          `Failed to activate agent: ${e instanceof Error ? e.message : String(e)}`
-        );
+        output.log(`    API Key: ${redactApiKey(selected.apiKey)}\n`);
+      } else {
+        // Switching to a different agent — stop seller + regenerate key
+        const proceed = await stopSellerIfRunning();
+        if (!proceed) {
+          output.log("  Setup cancelled.\n");
+          return;
+        }
+        try {
+          const result = await regenerateApiKey(sessionToken, selected.walletAddress);
+          activateAgent(selected.id, result.apiKey);
+          output.success(`Active agent: ${selected.name}`);
+          output.log(`    Wallet:  ${selected.walletAddress}`);
+          output.log(`    API Key: ${redactApiKey(result.apiKey)} (regenerated)\n`);
+        } catch (e) {
+          output.error(
+            `Failed to activate agent: ${e instanceof Error ? e.message : String(e)}`
+          );
+        }
       }
       return;
     }
     // Fall through to create new agent
   }
 
-  // Create new agent
+  // Create new agent — stop seller first (API key will change)
+  const proceed = await stopSellerIfRunning();
+  if (!proceed) {
+    output.log("  Setup cancelled.\n");
+    return;
+  }
+
   output.log("  Create a new agent\n");
   const agentName = (await question(rl, "  Enter agent name: ")).trim();
   if (!agentName) {
