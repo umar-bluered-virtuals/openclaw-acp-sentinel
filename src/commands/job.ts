@@ -6,6 +6,7 @@
 // =============================================================================
 
 import client from "../lib/client.js";
+import { formatPrice } from "../lib/config.js";
 import * as output from "../lib/output.js";
 
 export async function create(
@@ -114,15 +115,6 @@ type JobListItem = {
   name?: unknown;
   deliverable?: unknown;
 };
-
-function formatPrice(price: unknown, priceType?: unknown): string {
-  const p = price != null ? String(price) : "-";
-  return String(priceType).toLowerCase() === "fixed"
-    ? `${p} USDC`
-    : priceType != null
-    ? `${p} ${priceType}`
-    : p;
-}
 
 export type JobListOptions = {
   page?: number;

@@ -16,6 +16,7 @@ export interface OfferingConfig {
   name: string;
   description: string;
   jobFee: number;
+  jobFeeType: "fixed" | "percentage";
   requiredFunds: boolean;
 }
 

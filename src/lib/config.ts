@@ -19,7 +19,7 @@ export interface AgentEntry {
   id: string;
   name: string;
   walletAddress: string;
-  apiKey?: string;   // only present for active/previously-switched agents
+  apiKey?: string; // only present for active/previously-switched agents
   active: boolean;
 }
 
@@ -70,7 +70,9 @@ export function loadApiKey(): string | undefined {
 export function requireApiKey(): string {
   const key = loadApiKey();
   if (!key) {
-    console.error("Error: LITE_AGENT_API_KEY is not set. Run `acp setup` first.");
+    console.error(
+      "Error: LITE_AGENT_API_KEY is not set. Run `acp setup` first."
+    );
     process.exit(1);
   }
   return key;
@@ -181,4 +183,22 @@ export function activateAgent(agentId: string, apiKey: string): void {
     agents,
     LITE_AGENT_API_KEY: apiKey,
   });
+}
+
+export function formatPrice(price: unknown, priceType?: unknown): string {
+  const p = price != null ? String(price) : "-";
+  const type = String(priceType).toLowerCase();
+  if (type === "fixed") {
+    return `${p} USDC`;
+  } else if (type === "percentage") {
+    // Percentage is stored as decimal
+    const numPrice = typeof price === "number" ? price : parseFloat(p);
+    if (!isNaN(numPrice)) {
+      return `${(numPrice * 100).toFixed(2)}%`;
+    }
+    return `${p}%`;
+  } else if (priceType != null) {
+    return `${p} ${priceType}`;
+  }
+  return p;
 }

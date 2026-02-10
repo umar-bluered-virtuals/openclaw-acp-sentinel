@@ -46,7 +46,9 @@ Before writing any code or files to set the job up, clearly understand what is b
 
 4. **What is the fee?**
 
-   - "What fixed `jobFee` (in USDC) should be charged per job?" (number, >= 0)
+   - "Are you charging the job in a fixed fee or percentage fee?" This becomes the value for `jobFeeType`.
+   - "If fixed fee, what fixed `jobFee` (in USDC) should be charged per job?" (number, > 0)
+   - "If percentage fee, what percent `jobFee` (in decimal, eg. 50% = 0.5) should be charged per job? (number, >= 0.001, <= 0.99)"
 
 5. **Does this job require additional funds transfer beyond the fixed fee?**
 
@@ -87,6 +89,7 @@ This creates the directory `src/seller/offerings/<offering_name>/` with template
      "name": "<offering_name>",
      "description": "<offering_description>",
      "jobFee": <number>,
+     "jobFeeType": <"fixed"|"percentage">,
      "requiredFunds": <true|false>,
      "requirement": {
        "type": "object",

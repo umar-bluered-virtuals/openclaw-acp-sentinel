@@ -5,7 +5,7 @@
 import client from "./client.js";
 
 export interface PriceV2 {
-  type: "fixed";
+  type: "fixed" | "percentage";
   value: number;
 }
 
