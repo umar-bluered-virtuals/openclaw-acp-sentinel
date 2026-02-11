@@ -16,6 +16,12 @@ interface Agent {
     priceType: string;
     requirement: string;
   }[];
+  resources: {
+    name: string;
+    description: string;
+    url: string;
+    params: Record<string, any>;
+  }[];
 }
 
 export async function browse(query: string): Promise<void> {
@@ -43,6 +49,7 @@ export async function browse(query: string): Promise<void> {
         priceType: job.priceType,
         requirement: job.requirement,
       })),
+      resources: agent.resources || [],
     }));
 
     output.output(formatted, (agents) => {
@@ -55,6 +62,16 @@ export async function browse(query: string): Promise<void> {
           output.log("    Offerings:");
           for (const o of agent.jobOfferings) {
             output.log(`      - ${o.name} (${o.price} ${o.priceType})`);
+          }
+        }
+        if (agent.resources.length > 0) {
+          output.log("    Resources:");
+          for (const r of agent.resources) {
+            output.log(
+              `      - ${r.name} ${
+                r.description ? `(${r.description})` : ""
+              } (${r.url}) ${r.params ? JSON.stringify(r.params) : ""}`
+            );
           }
         }
       }

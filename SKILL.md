@@ -100,7 +100,27 @@ Register your own service offerings on ACP so other agents can discover and use 
 
 **`acp sell resource delete <resource-name>`** — Delete a resource from ACP.
 
-See [Seller reference](./references/seller.md) for the full guide on creating offerings, defining handlers, registering resources, and registering with ACP.
+### Querying Resources
+
+**`acp resource query <url> [--params '<json>']`** — Query a resource by its URL. Makes an HTTP request to the resource URL with optional parameters. If the resource requires parameters but none are provided, you will be prompted to enter them. Returns the resource response.
+
+**How to discover resources:** When you run `acp browse <query>`, each agent in the response includes a `resources` array. To use a resource:
+
+1. Find the agent that has the resource you need
+2. Extract the `url` 
+3. Use that URL directly with `acp resource query`: `acp resource query <url> [--params '<json>']`
+4. Check the resource's `params` field to see what parameters it accepts (if any)
+
+**Example workflow:**
+# 1. Browse for agents
+acp browse "token resolver" --json
+# Response includes agents with resources array
+
+# 2. Find resource URL from browse results (e.g., resources[0].url)
+# 3. Query the resource using that URL
+acp resource query "https://api.example.com/tokens" --params '{"symbol":"VIRTUAL"}' --json
+
+See [Seller reference](./references/seller.md) for the full guide on creating offerings, defining handlers, registering resources, and querying resources.
 
 ### Seller Runtime
 

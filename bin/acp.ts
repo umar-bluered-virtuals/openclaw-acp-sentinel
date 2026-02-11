@@ -99,6 +99,10 @@ function buildHelp(): string {
     cmd("profile update description <value>", "Update agent description"),
     cmd("profile update profilePic <url>", "Update agent profile picture"),
     "",
+    section("Resources"),
+    cmd("resource query <url>", "Query a resource by URL"),
+    flag("--params '<json>'", "Parameters for the resource (JSON)"),
+    "",
     section("Marketplace"),
     cmd("browse <query>", "Search agents on the marketplace"),
     "",
@@ -254,6 +258,21 @@ function buildCommandHelp(command: string): string | undefined {
       cmd("status", "Show whether the seller is running"),
       cmd("logs", "Show recent seller logs (last 50 lines)"),
       flag("--follow, -f", "Tail logs in real time (Ctrl+C to stop)"),
+      "",
+    ].join("\n"),
+
+    resource: () => [
+      "",
+      `  ${bold("acp resource")} ${dim("— Query resources by URL")}`,
+      "",
+      cmd("query <url>", "Query a resource by its URL"),
+      flag("--params '<json>'", "Parameters to pass to the resource (JSON)"),
+      "",
+      `  ${dim("Examples:")}`,
+      `    acp resource query https://api.example.com/market-data`,
+      `    acp resource query https://api.example.com/market-data --params '{"symbol":"BTC"}'`,
+      "",
+      `  ${dim("Note: Always uses GET requests. Params are appended as query string.")}`,
       "",
     ].join("\n"),
   };
@@ -442,6 +461,26 @@ async function main(): Promise<void> {
       if (subcommand === "logs")
         return serve.logs(hasFlag(rest, "--follow", "-f"));
       console.log(buildCommandHelp("serve"));
+      return;
+    }
+
+    case "resource": {
+      const resource = await import("../src/commands/resource.js");
+      if (subcommand === "query") {
+        const url = rest[0];
+        const paramsJson = getFlagValue(rest, "--params");
+        let params: Record<string, any> | undefined;
+        if (paramsJson) {
+          try {
+            params = JSON.parse(paramsJson);
+          } catch {
+            console.error("Error: Invalid JSON in --params");
+            process.exit(1);
+          }
+        }
+        return resource.query(url, params);
+      }
+      console.log(buildCommandHelp("resource"));
       return;
     }
 

@@ -436,8 +436,8 @@ Resources are external APIs or services that your agent can register and make av
 
    - `name` — Unique identifier for the resource (required)
    - `description` — Human-readable description of what the resource provides (required)
-   - `url` — The API endpoint URL for the resource (required)
-   - `params` — Optional parameters object that can be used when calling the resource
+   - `url` — The API endpoint URL for the resource (required). When queried, this URL will receive GET requests only.
+   - `params` — Optional parameters object that describes what parameters the resource accepts. When querying the resource, these parameters are appended as query string parameters to the URL.
 
    **Example:**
 
@@ -464,5 +464,38 @@ To remove a resource:
 ```bash
 acp sell resource delete <resource-name>
 ```
+
+### Querying Resources
+
+Agents can query resources by their URL. This allows agents to call external APIs and services directly.
+
+**Command:**
+
+```bash
+acp resource query <url> [--params '<json>'] --json
+```
+
+**Examples:**
+
+```bash
+# Query a resource by URL
+acp resource query https://api.example.com/market-data --json
+
+# Query a resource with parameters (appended as query string)
+acp resource query https://api.example.com/market-data --params '{"symbol":"BTC","interval":"1h"}' --json
+```
+
+**How it works:**
+
+1. The command makes a **GET request only** directly to the provided URL
+2. If `--params` are provided, they are appended as query string parameters to the URL (e.g., `?symbol=BTC&interval=1h`)
+3. If no params are provided, the request is made without parameters (the agent/caller should provide params via `--params` if needed)
+4. Returns the response from the resource endpoint
+
+**Important:** Resource queries always use GET requests. Parameters are passed as query string parameters, not in the request body. The agent calling this command is responsible for providing any required parameters via the `--params` flag.
+
+**Response:**
+
+The response is the raw response from the resource's API endpoint. The format depends on what the resource provider returns.
 
 ---
