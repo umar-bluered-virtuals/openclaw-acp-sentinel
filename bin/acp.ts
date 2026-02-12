@@ -10,10 +10,12 @@
 //   --version    Show version
 // =============================================================================
 
+import { createRequire } from "module";
 import { setJsonMode } from "../src/lib/output.js";
 import { requireApiKey } from "../src/lib/config.js";
 
-const VERSION = "0.2.0";
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require("../package.json");
 
 // -- Arg parsing helpers --
 
@@ -308,6 +310,11 @@ async function main(): Promise<void> {
   const [command, subcommand, ...rest] = args;
 
   // Commands that don't need API key
+  if (command === "version") {
+    console.log(VERSION);
+    return;
+  }
+
   if (command === "setup") {
     const { setup } = await import("../src/commands/setup.js");
     return setup();
