@@ -55,6 +55,16 @@ export async function status(jobId: string): Promise<void> {
 
     const data = job.data.data;
 
+    if (job.data.errors) {
+      output.output(job.data.errors, (errors) => {
+        output.heading(`Job ${jobId}`);
+        errors.forEach((error: string, i: number) =>
+          output.field(`Error ${i + 1}`, error)
+        );
+      });
+      return;
+    }
+
     const memoHistory = (data.memos || []).map(
       (memo: {
         nextPhase: string;
