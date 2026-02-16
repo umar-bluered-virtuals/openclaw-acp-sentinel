@@ -24,7 +24,11 @@ import {
   type Resource,
 } from "../lib/api.js";
 import { getMyAgentInfo } from "../lib/wallet.js";
-import { formatPrice, getActiveAgent, sanitizeAgentName } from "../lib/config.js";
+import {
+  formatPrice,
+  getActiveAgent,
+  sanitizeAgentName,
+} from "../lib/config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +51,7 @@ function getOfferingsRoot(): string {
  * instead of the new per-agent structure (src/seller/offerings/<agent>/<offering>/).
  * Warns the user and shows the move command.
  */
-export function checkForLegacyOfferings(): void {
+export async function checkForLegacyOfferings(): Promise<void> {
   if (!fs.existsSync(OFFERINGS_BASE)) return;
 
   const agent = getActiveAgent();
@@ -67,7 +71,37 @@ export function checkForLegacyOfferings(): void {
 
   if (legacyOfferings.length === 0) return;
 
-  const names = legacyOfferings.map((e) => e.name);
+  const agentInfo = await getMyAgentInfo();
+  const registeredOfferingNames = new Set(
+    agentInfo.jobs?.map((job) => job.name) || []
+  );
+
+  const agentLegacyOfferings = legacyOfferings.filter((e) => {
+    if (registeredOfferingNames.has(e.name)) {
+      return true;
+    }
+    try {
+      const offeringJsonPath = path.join(
+        OFFERINGS_BASE,
+        e.name,
+        "offering.json"
+      );
+      if (fs.existsSync(offeringJsonPath)) {
+        const offeringJson: OfferingJson = JSON.parse(
+          fs.readFileSync(offeringJsonPath, "utf-8")
+        );
+        return registeredOfferingNames.has(offeringJson.name);
+      }
+    } catch {
+      // If we can't read the file, skip this check
+    }
+    return false;
+  });
+
+  // Only show warning if there are legacy offerings that belong to the current agent
+  if (agentLegacyOfferings.length === 0) return;
+
+  const names = agentLegacyOfferings.map((e) => e.name);
   output.warn(
     `Found ${names.length} offering(s) in the legacy directory structure:\n` +
       names.map((n) => `    - src/seller/offerings/${n}/`).join("\n") +
@@ -284,7 +318,7 @@ function buildAcpPayload(json: OfferingJson): JobOfferingData {
 // -- Init: scaffold a new offering --
 
 export async function init(offeringName: string): Promise<void> {
-  checkForLegacyOfferings();
+  await checkForLegacyOfferings();
   if (!offeringName) {
     output.fatal("Usage: acp sell init <offering_name>");
   }
@@ -351,7 +385,7 @@ export function requestPayment(request: any): string {
 // -- Create: validate + register --
 
 export async function create(offeringName: string): Promise<void> {
-  checkForLegacyOfferings();
+  await checkForLegacyOfferings();
   if (!offeringName) {
     output.fatal("Usage: acp sell create <offering_name>");
   }
@@ -511,7 +545,7 @@ function acpOfferingNames(acpOfferings: AcpOffering[]): Set<string> {
 }
 
 export async function list(): Promise<void> {
-  checkForLegacyOfferings();
+  await checkForLegacyOfferings();
   const acpOfferings = await fetchAcpOfferings();
   const acpNames = acpOfferingNames(acpOfferings);
   const localOfferings = listLocalOfferings();
@@ -575,7 +609,11 @@ export async function list(): Promise<void> {
 // -- Inspect: detailed view --
 
 function detectHandlers(offeringDir: string): string[] {
-  const handlersPath = path.join(getOfferingsRoot(), offeringDir, "handlers.ts");
+  const handlersPath = path.join(
+    getOfferingsRoot(),
+    offeringDir,
+    "handlers.ts"
+  );
   if (!fs.existsSync(handlersPath)) return [];
 
   const content = fs.readFileSync(handlersPath, "utf-8");
