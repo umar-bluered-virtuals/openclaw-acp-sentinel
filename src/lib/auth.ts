@@ -6,11 +6,7 @@
 import axios, { type AxiosInstance } from "axios";
 import * as output from "./output.js";
 import { openUrl } from "./open.js";
-import {
-  readConfig,
-  writeConfig,
-  type AgentEntry,
-} from "./config.js";
+import { readConfig, writeConfig, type AgentEntry } from "./config.js";
 
 const API_URL = process.env.ACP_AUTH_URL || "https://acpx.virtuals.io";
 
@@ -105,7 +101,9 @@ export async function getAuthUrl(): Promise<AuthUrlResponse> {
   return data.data;
 }
 
-export async function getAuthStatus(requestId: string): Promise<AuthStatusResponse | null> {
+export async function getAuthStatus(
+  requestId: string
+): Promise<AuthStatusResponse | null> {
   const { data } = await apiClient().get<{ data: AuthStatusResponse }>(
     `/api/auth/lite/auth-status?requestId=${requestId}`
   );
@@ -115,7 +113,9 @@ export async function getAuthStatus(requestId: string): Promise<AuthStatusRespon
 // -- Agent API --
 
 /** Fetch all agents belonging to the authenticated user. No API keys returned. */
-export async function fetchAgents(sessionToken: string): Promise<AgentInfoResponse[]> {
+export async function fetchAgents(
+  sessionToken: string
+): Promise<AgentInfoResponse[]> {
   const { data } = await apiClientWithSession(sessionToken).get<{
     data: AgentInfoResponse[];
   }>("/api/agents/lite");
@@ -176,11 +176,17 @@ export async function interactiveLogin(): Promise<void> {
   openUrl(authUrl);
 
   output.output(
-    { action: "open_url", url: authUrl, message: "Authenticate at this URL to continue." },
+    {
+      action: "open_url",
+      url: authUrl,
+      message: "Authenticate at this URL to continue.",
+    },
     () => {
       output.log(`  Opening browser...`);
       output.log(`  Login link: ${authUrl}\n`);
-      output.log(`  Waiting for authentication (timeout: ${AUTH_TIMEOUT_MS / 1_000}s)...\n`);
+      output.log(
+        `  Waiting for authentication (timeout: ${AUTH_TIMEOUT_MS / 1_000}s)...\n`
+      );
     }
   );
 
@@ -196,15 +202,16 @@ export async function interactiveLogin(): Promise<void> {
       if (status?.token) {
         storeSessionToken(status.token);
         output.output(
-          { status: "authenticated", message: "Login success. Session stored." },
+          {
+            status: "authenticated",
+            message: "Login success. Session stored.",
+          },
           () => output.success("Login success. Session stored.\n")
         );
         return;
       }
     } catch (err) {
-      if (process.env.ACP_DEBUG) {
-        console.error("[auth-poll]", err instanceof Error ? err.message : err);
-      }
+      // Auth not ready yet or transient error — keep polling
     }
 
     // Progress indicator every 15s (3 polls)
@@ -244,7 +251,9 @@ export async function ensureSession(): Promise<string> {
  * Server does NOT return API keys — only id, name, walletAddress.
  * Local API keys (from create/regenerate) are preserved.
  */
-export function syncAgentsToConfig(serverAgents: AgentInfoResponse[]): AgentEntry[] {
+export function syncAgentsToConfig(
+  serverAgents: AgentInfoResponse[]
+): AgentEntry[] {
   const config = readConfig();
   const localAgents = config.agents ?? [];
 
