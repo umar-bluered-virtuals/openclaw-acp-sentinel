@@ -121,6 +121,7 @@ function buildHelp(): string {
     cmd("bounty list", "List active local bounties"),
     cmd("bounty status <bounty-id>", "Get bounty match status"),
     cmd("bounty select <bounty-id>", "Select candidate and create ACP job"),
+    cmd("bounty update <bounty-id>", "Update an open bounty"),
     "",
     cmd("resource query <url>", "Query an agent's resource by URL"),
     flag("--params '<json>'", "Parameters for the resource (JSON)"),
@@ -240,31 +241,38 @@ function buildCommandHelp(command: string): string | undefined {
         "",
       ].join("\n"),
 
-    bounty: () =>
-      [
-        "",
-        `  ${bold("acp bounty")} ${dim("— Manage local bounty lifecycle")}`,
-        "",
-        cmd("create [query]", "Create a bounty (interactive or via flags)"),
-        `    ${dim('Interactive:  acp bounty create "video production"')}`,
-        `    ${dim(
-          'With flags:   acp bounty create --title "Music video" --budget 50 --tags "video,music" --json'
-        )}`,
-        "",
-        flag("--title <text>", "Bounty title (triggers non-interactive mode)"),
-        flag("--description <text>", "Description (defaults to title)"),
-        flag("--budget <number>", "Budget in USD"),
-        flag("--category <digital|physical>", "Category (default: digital)"),
-        flag("--tags <csv>", "Comma-separated tags"),
-        flag("--source-channel <name>", "Channel where bounty originated (e.g. telegram, webchat)"),
-        "",
-        cmd("poll", "Poll all active bounties and update local state"),
-        cmd("list", "List active local bounties"),
-        cmd("status <bounty-id>", "Fetch remote match status for a bounty"),
-        cmd("select <bounty-id>", "Pick pending_match candidate, create ACP job, confirm match"),
-        cmd("cleanup <bounty-id>", "Remove local bounty state"),
-        "",
-      ].join("\n"),
+    bounty: () => [
+      "",
+      `  ${bold("acp bounty")} ${dim("— Manage local bounty lifecycle")}`,
+      "",
+      cmd("create [query]", "Create a bounty (interactive or via flags)"),
+      `    ${dim('Interactive:  acp bounty create "video production"')}`,
+      `    ${dim('With flags:   acp bounty create --title "Music video" --description "Cute girl dancing animation for my song" --budget 50 --tags "video,music" --category digital --source-channel telegram --json')}`,
+      "",
+      flag("--title <text>", "Bounty title (triggers non-interactive mode, also used for update)"),
+      flag("--description <text>", "Description (defaults to title, also used for update)"),
+      flag("--budget <number>", "Budget in USD (also used for update)"),
+      flag("--category <digital|physical>", "Category (default: digital, also used for update)"),
+      flag("--tags <csv>", "Comma-separated tags (also used for update)"),
+      flag("--source-channel <name>", "Channel where bounty originated (e.g. telegram, webchat)"),
+      flag("--json", "Output result in JSON format (for create)"),
+      "",
+      cmd("poll", "Poll all active bounties and update local state"),
+      cmd("list", "List active local bounties"),
+      cmd("status <bounty-id>", "Fetch remote match status for a bounty"),
+      cmd(
+        "select <bounty-id>",
+        "Pick pending_match candidate, create ACP job, confirm match"
+      ),
+      cmd("update <bounty-id>", "Update an open bounty"),
+      flag("--title <text>", "New title (for update)"),
+      flag("--description <text>", "New description (for update)"),
+      flag("--budget <number>", "New budget in USD (for update)"),
+      flag("--tags <csv>", "New tags (for update)"),
+      "",
+      cmd("cleanup <bounty-id>", "Remove local bounty state"),
+      "",
+    ].join("\n"),
 
     token: () =>
       [
@@ -552,6 +560,20 @@ async function main(): Promise<void> {
         const query = rest.filter((a) => a != null && !String(a).startsWith("-")).join(" ");
         return bounty.create(query || undefined, {
           sourceChannel: sourceChannelFlag,
+        });
+      }
+      if (subcommand === "update") {
+        const updateBountyId = rest[0];
+        const updateTitle = getFlagValue(rest, "--title");
+        const updateDesc = getFlagValue(rest, "--description");
+        const updateBudgetStr = getFlagValue(rest, "--budget");
+        const updateTags = getFlagValue(rest, "--tags");
+        const updateBudget = updateBudgetStr != null ? Number(updateBudgetStr) : undefined;
+        return bounty.update(updateBountyId, {
+          title: updateTitle,
+          description: updateDesc,
+          budget: Number.isFinite(updateBudget) ? updateBudget : undefined,
+          tags: updateTags,
         });
       }
       if (subcommand === "poll") return bounty.poll();

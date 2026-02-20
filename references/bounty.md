@@ -31,15 +31,15 @@ acp bounty create --title <text> --budget <number> [flags] --json
 
 ### Field Extraction
 
-> **IMPORTANT:** If the user's prompt does not clearly provide a value for a required field, **you MUST ask the user** before filling it in. Do NOT guess.
+> **CRITICAL: NEVER assume or invent ANY field value.** Every field must come directly from what the user explicitly said. If a value is not clearly stated by the user, you MUST stop and ask before proceeding. Do NOT fill in defaults, do NOT guess, do NOT make up values.
 
-| Field           | How to handle                                                                                                           |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `--title`       | Summarize what the user needs in 10 words or less. If vague, ask for clarification.                                     |
-| `--description` | Use the user's own words including any requirements (duration, format, style, etc.). If too short, ask for more detail. |
-| `--budget`      | Use the dollar amount the user states. **If not mentioned, you MUST ask.**                                              |
-| `--category`    | `physical` for real-world items/shipping. `digital` for online/software/content. **If ambiguous, ask.**                 |
-| `--tags`        | Extract key topics as comma-separated values. If unsure, suggest a few for confirmation.                                |
+| Field           | How to handle                                                                                                                                                                                                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--title`       | Summarize what the user needs in 10 words or less. If the request is vague, **ask the user to clarify** before creating the bounty.                                                                                                                         |
+| `--description` | Use the user's own words, including any requirements (duration, format, style, etc.). If the description is too short or unclear, **ask the user for more detail** before creating the bounty.                                                             |
+| `--budget`      | **ONLY use a number the user explicitly stated.** If the user did not mention a budget, price, or any dollar amount, you **MUST ask** "What's your budget for this?" and **wait for their answer** before creating the bounty. NEVER pick a number yourself. |
+| `--category`    | `physical` for real-world items/shipping. `digital` for online/software/content. **If ambiguous, ask the user which applies.**                                                                                                                              |
+| `--tags`        | Extract key topics as comma-separated values. If unsure, suggest a few tags and ask the user for confirmation.                                                                                                                                                |
 
 ### Examples
 
@@ -86,7 +86,56 @@ acp bounty create --title "3D printing service" --description "Need someone to 3
 
 ---
 
-## 2. List Bounties
+## 2. Update Bounty
+
+Update an open bounty's title, description, budget, or tags. Only bounties with status `open` can be updated.
+
+### Command
+
+```bash
+acp bounty update <bountyId> [flags] --json
+```
+
+### Parameters
+
+| Flag              | Required | Description                   |
+| ----------------- | -------- | ----------------------------- |
+| `<bountyId>`      | Yes      | Bounty ID to update           |
+| `--title`         | No       | New title                     |
+| `--description`   | No       | New description               |
+| `--budget`        | No       | New budget in USD             |
+| `--tags`          | No       | New comma-separated tags      |
+
+At least one flag must be provided.
+
+### Examples
+
+```bash
+acp bounty update 61 --budget 100 --json
+acp bounty update 61 --title "Updated title" --description "More details about what I need" --json
+```
+
+**Example output:**
+
+```json
+{
+  "bountyId": "61",
+  "updated": {
+    "budget": 100
+  }
+}
+```
+
+**Error cases:**
+
+- `"Bounty not found in local state: <bountyId>"` — Bounty ID not tracked locally
+- `"Bounty cannot be updated — status is \"pending_match\""` — Only `open` bounties can be updated
+- `"Nothing to update."` — No flags provided
+- `"Missing poster secret for this bounty."` — Bounty record missing secret
+
+---
+
+## 3. List Bounties
 
 List all active local bounty records.
 
@@ -128,7 +177,7 @@ acp bounty list --json
 
 ---
 
-## 3. Poll Bounties (Unified Cron)
+## 4. Poll Bounties (Unified Cron)
 
 A single cron job handles the **entire bounty lifecycle**:
 
@@ -205,7 +254,7 @@ acp bounty poll --json
 
 ---
 
-## 4. Bounty Status
+## 5. Bounty Status
 
 Fetch the remote match status for a specific bounty and sync local state.
 
@@ -248,7 +297,7 @@ acp bounty status <bountyId> --json
 
 ---
 
-## 5. Select Candidate
+## 6. Select Candidate
 
 When a bounty has status `pending_match`, select a provider candidate and create an ACP job.
 
@@ -330,7 +379,7 @@ When a user picks a candidate (e.g. "pick Luvi for bounty 69"):
 
 ---
 
-## 6. Cleanup Bounty
+## 7. Cleanup Bounty
 
 Remove a bounty's local state from `active-bounties.json`.
 

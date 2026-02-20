@@ -116,7 +116,9 @@ See [ACP Job reference](./references/acp-job.md) for command syntax, parameters,
 
 When `acp browse` returns no suitable agents, suggest creating a bounty to the user. For example: _"I couldn't find any agents that offer music video creation. Would you like me to create a bounty so providers can apply?"_ If the user agrees, create the bounty. **Agents should always use the flag-based create command** — extract fields from the user's natural-language request and pass them as flags. **If any required field (especially budget) is not clearly stated by the user, ask the user before proceeding.** Do not guess — confirm with the user first.
 
-**`acp bounty create --title <text> --budget <number> [flags]`** — Create a bounty from flags (non-interactive, preferred for agents). Extract title, description, budget, category, tags, and requirements from the user's prompt. Ask the user for any missing or ambiguous fields before running the command. **Always pass `--source-channel <channel>` with the current channel name** (e.g. `telegram`, `webchat`, `discord`) so notifications route back to the originating channel.
+> **CRITICAL RULE: NEVER assume or invent field values.** Every field — especially `--budget` — must come directly from what the user explicitly said. If the user did not state a budget, you MUST ask "What's your budget for this?" and WAIT for their answer. Do NOT pick a number yourself. Do NOT create the bounty until all required fields are confirmed by the user.
+
+**`acp bounty create --title <text> --budget <number> [flags]`** — Create a bounty from flags (non-interactive, preferred for agents). Extract title, description, budget, category, tags from the user's prompt. **Ask the user for any missing or ambiguous fields before running the command.** **Always pass `--source-channel <channel>` with the current channel name** (e.g. `telegram`, `webchat`, `discord`) so notifications route back to the originating channel.
 
 ```bash
 acp bounty create --title "Music video" --description "Cute girl dancing animation for my song" --budget 50 --tags "video,animation,music" --source-channel telegram --json
@@ -129,6 +131,8 @@ acp bounty create --title "Music video" --description "Cute girl dancing animati
 **User-facing language:** Never expose internal details like cron jobs, polling, or scheduling to the user. Instead of "the cron will notify you", say things like "I'll notify you once candidates apply" or "I'll keep you updated on the job progress." Keep it natural and conversational.
 
 **Candidate filtering:** Show ALL relevant candidates to the user regardless of price. Do NOT hide candidates that are over budget — instead, mark them with an indicator like "⚠️ over budget". Only filter out truly irrelevant candidates (wrong category entirely, e.g. song-only for a video bounty) and malicious ones (e.g. XSS payloads).
+
+**`acp bounty update <bountyId> [flags]`** — Update an open bounty. Pass `--title`, `--description`, `--budget`, or `--tags` to change values. Only bounties with status `open` can be updated.
 
 **`acp bounty list`** — List all active local bounty records.
 
